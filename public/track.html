@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Vehicle Inspection Tracker</title>
+  <link rel="stylesheet" href="theme.css">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <script src="theme.js"></script>
+  <style>
+    :root {
+      --accent-green: #2ecc71;
+      --accent-red: #ef4444;
+      /* Default Light Mode for Tracker */
+      --track-text: #2c3e50;
+      --track-text-muted: rgba(44, 62, 80, 0.7);
+      --input-text: #000000;
+      --input-bg-color: #ffffff;
+      --input-placeholder: rgba(0,0,0,0.5);
+      --input-border-color: rgba(0,0,0,0.2);
+    }
+    
+    [data-theme='dark'] {
+      --track-text: #ffffff;
+      --track-text-muted: rgba(255, 255, 255, 0.75);
+      --input-text: #ffffff;
+      --input-bg-color: #1f2937;
+      --input-placeholder: rgba(255,255,255,0.5);
+      --input-border-color: rgba(255,255,255,0.2);
+    }
+
+    body {
+      background: var(--bg-gradient);
+      color: var(--track-text);
+      font-family: 'Outfit', sans-serif;
+      min-height: 100vh;
+      padding: 40px 20px;
+    }
+    .track-wrapper {
+      max-width: 900px;
+      margin: 0 auto;
+    }
+    .header-section {
+      text-align: center;
+      margin-bottom: 40px;
+    }
+    .card {
+      background: var(--card-bg);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 20px;
+      padding: 30px;
+      margin-bottom: 25px;
+      box-shadow: var(--shadow);
+      transition: 0.3s;
+    }
+    h1, h2, h3, h4, h5 { color: var(--track-text) !important; font-weight: 700; }
+    
+    .search-input {
+      font-size: 24px;
+      font-weight: 700;
+      text-align: center;
+      letter-spacing: 2px;
+      padding: 16px;
+      border-radius: 15px;
+      border: 1px solid var(--input-border-color);
+      background: var(--input-bg-color);
+      color: var(--input-text);
+      width: 100%;
+      font-weight: 500;
+      transition: all 0.3s ease;
+    }
+    .search-input::placeholder {
+      color: var(--input-placeholder);
+      letter-spacing: normal;
+      font-weight: 400;
+    }
+    .search-input:focus {
+      outline: none;
+      border-color: #34d399 !important;
+      box-shadow: 0 0 0 4px rgba(52, 211, 153, 0.3) !important;
+    }
+
+    /* Certificate Styles */
+    .certificate-card {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 24px;
+      padding: 40px;
+      margin-top: 30px;
+      box-shadow: 0 20px 50px rgba(0,0,0,0.3);
+      position: relative;
+    }
+    .cert-header {
+      text-align: center;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      padding-bottom: 25px;
+      margin-bottom: 35px;
+    }
+    .cert-title {
+      font-size: 22px;
+      text-transform: uppercase;
+      letter-spacing: 3px;
+      color: var(--accent-green);
+    }
+    .section-divider {
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+      margin: 25px 0;
+    }
+    .info-label { color: var(--track-text-muted); font-size: 13px; text-transform: uppercase; font-weight: 700; margin-bottom: 6px; }
+    .info-value { font-size: 20px; font-weight: 500; color: var(--track-text); }
+    .plate-highlight { font-size: 30px; font-weight: 800; color: var(--accent-green); letter-spacing: 1px; }
+    
+    .status-badge {
+      display: inline-block;
+      padding: 10px 24px;
+      border-radius: 50px;
+      font-weight: 900;
+      text-transform: uppercase;
+      font-size: 16px;
+      letter-spacing: 1px;
+    }
+    .status-pass { background: var(--accent-green); color: #000; }
+    .status-fail { background: var(--accent-red); color: #fff; }
+    
+    .history-table { width: 100%; border-collapse: separate; border-spacing: 0 10px; }
+    .history-table th { color: var(--track-text-muted); font-size: 12px; text-transform: uppercase; padding: 10px; }
+    .history-table td { background: rgba(255,255,255,0.03); padding: 18px; color: var(--track-text); }
+    .history-table tr td:first-child { border-top-left-radius: 12px; border-bottom-left-radius: 12px; }
+    .history-table tr td:last-child { border-top-right-radius: 12px; border-bottom-right-radius: 12px; }
+
+    .btn-search {
+      background: var(--accent-green);
+      color: #000;
+      font-weight: 800;
+      padding: 16px 45px;
+      border-radius: 15px;
+      border: none;
+      transition: 0.3s;
+      text-transform: uppercase;
+    }
+    .btn-search:hover { background: #27ae60; transform: translateY(-2px); box-shadow: 0 10px 25px rgba(46, 204, 113, 0.4); }
+
+    .cert-actions { display: flex; gap: 15px; margin-top: 30px; }
+    .btn-action {
+      flex: 1; padding: 14px; border-radius: 12px; font-weight: 700; border: 1px solid rgba(255,255,255,0.1);
+      background: rgba(255,255,255,0.05); color: var(--track-text); transition: 0.3s;
+    }
+    .btn-action:hover { background: rgba(255,255,255,0.15); transform: translateY(-2px); }
+
+    @media print {
+      body { padding: 0; background: white; color: black; }
+      .certificate-card { border: 2px solid #000; box-shadow: none; margin: 0; background: white; color: black; }
+      .cert-actions, .header-section, .card, .btn-link { display: none !important; }
+      .cert-title { color: black; }
+      .plate-highlight { color: black; }
+      .status-badge { border: 2px solid #000; background: white !important; color: black !important; }
+    }
+
+    .btn-delete {
+      background: none;
+      border: none;
+      color: #ff4d4d;
+      cursor: pointer;
+      padding: 5px;
+      font-size: 18px;
+      transition: 0.2s;
+      opacity: 0.6;
+    }
+    .btn-delete:hover {
+      opacity: 1;
+      transform: scale(1.2);
+    }
+
+    /* Custom Modal */
+    .custom-modal {
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      display: flex; justify-content: center; align-items: center;
+      background: rgba(0,0,0,0.8); z-index: 9999;
+      opacity: 0; visibility: hidden; transition: 0.3s;
+      backdrop-filter: blur(5px);
+    }
+    .custom-modal.active { opacity: 1; visibility: visible; }
+    .modal-content-box {
+      background: var(--card-bg); color: var(--track-text);
+      width: 90%; max-width: 400px; padding: 40px;
+      border-radius: 24px; text-align: center;
+      border: 1px solid rgba(255,255,255,0.1);
+      box-shadow: 0 25px 50px rgba(0,0,0,0.5);
+    }
+  </style>
+</head>
+<body>
+
+<div class="track-wrapper">
+  <div class="header-section">
+    <h1>🔍 Vehicle Inspection Tracker</h1>
+    <p class="opacity-75">Check emission status and certificate validity instantly</p>
+  </div>
+
+  <!-- Search Card -->
+  <div class="card text-center">
+    <div class="mb-4">
+      <input type="text" id="plate" class="search-input" placeholder="KA01AB1234">
+    </div>
+    <button class="btn-search" onclick="track()">Search Vehicle Record</button>
+    <div id="errorMsg" class="mt-3 text-danger fw-bold" style="display:none;"></div>
+  </div>
+
+  <div id="result-sections" style="display: none;">
+    <!-- Certificate Card -->
+    <div class="certificate-card">
+      <div class="cert-header">
+        <div class="cert-title">Emission Inspection Certificate</div>
+        <p class="text-secondary small mt-1">ISSUED BY DEPARTMENT OF ENVIRONMENT</p>
+      </div>
+
+      <div class="row align-items-center mb-4">
+        <div class="col-md-8 text-center text-md-start">
+          <div class="info-label">Vehicle Number</div>
+          <div id="resPlate" class="plate-highlight">--</div>
+        </div>
+        <div class="col-md-4 text-center text-md-end mt-3 mt-md-0">
+          <div id="resStatusPill" class="status-badge">--</div>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col-md-6 mb-3">
+          <div class="info-label">Owner Name</div>
+          <div id="resOwner" class="info-value">--</div>
+        </div>
+        <div class="col-md-6 mb-3">
+          <div class="info-label">Vehicle Type</div>
+          <div id="resType" class="info-value">--</div>
+        </div>
+      </div>
+
+      <div class="section-divider"></div>
+
+      <div class="row">
+        <div class="col-md-4 mb-3">
+          <div class="info-label">CO₂ Emission</div>
+          <div id="resEmission" class="info-value">--</div>
+        </div>
+        <div class="col-md-4 mb-3">
+          <div class="info-label">Fuel Used</div>
+          <div id="resFuel" class="info-value">--</div>
+        </div>
+        <div class="col-md-4 mb-3">
+          <div class="info-label">Certificate Status</div>
+          <div id="resValidity" class="info-value">--</div>
+        </div>
+      </div>
+
+      <div id="failReasonBox" class="mt-2 text-danger fw-bold" style="display: none;">
+        Reason: High Emission Level Detected
+      </div>
+
+      <div class="section-divider"></div>
+
+      <div class="row align-items-end">
+        <div class="col-md-8">
+          <div class="info-label">Date of Inspection</div>
+          <div id="resLastDate" class="info-value">--</div>
+        </div>
+        <div class="col-md-4 text-center">
+          <div style="border-top: 1px solid rgba(255,255,255,0.2); padding-top: 5px;">
+            <div class="info-label" style="font-size: 10px;">AUTHORIZED SIGNATURE</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="cert-actions">
+        <button class="btn-action" onclick="window.print()">Print Certificate</button>
+        <button class="btn-action" onclick="downloadMock()">Download Report</button>
+      </div>
+    </div>
+
+    <!-- History Card -->
+    <div class="card mt-5">
+      <h5 class="mb-4">📜 Detailed Emission History</h5>
+      <table class="history-table">
+        <thead>
+          <tr>
+            <th>Inspection Date</th>
+            <th>CO₂ Emission (kg)</th>
+            <th>Result</th>
+            <th id="adminActionHeader" style="display: none;">Action</th>
+          </tr>
+        </thead>
+        <tbody id="historyBody">
+          <!-- Rows added via JS -->
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="text-center mt-4">
+    <button class="btn btn-link text-decoration-none text-muted" onclick="window.location.href='carbon-dashboard.html'">
+      ← Back to Dashboard
+    </button>
+  </div>
+</div>
+
+<!-- Confirmation Modal -->
+<div id="deleteModal" class="custom-modal">
+  <div class="modal-content-box">
+    <h3 class="mb-3">Are you sure?</h3>
+    <p class="opacity-75 mb-4">This action will permanently delete this emission record. This cannot be undone.</p>
+    <div class="d-flex gap-3">
+      <button class="btn-action w-100" onclick="closeDeleteModal()">Cancel</button>
+      <button id="confirmDeleteBtn" class="btn btn-danger w-100 fw-bold" style="border-radius: 12px; padding: 12px;">Yes, Delete</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  const plateInput = document.getElementById('plate');
+
+  document.addEventListener('DOMContentLoaded', () => {
+    const role = localStorage.getItem('role');
+    const sessionPlate = localStorage.getItem('plate_number');
+    if (role === 'user' && sessionPlate) {
+      plateInput.value = sessionPlate;
+      plateInput.disabled = true;
+      track(); // Auto track if user
+    }
+  });
+
+  plateInput.addEventListener('input', (e) => {
+    e.target.value = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+  });
+
+  async function track() {
+    const plate = plateInput.value.toUpperCase().replace(/\s+/g, '');
+    const role = localStorage.getItem('role');
+    const sessionPlate = localStorage.getItem('plate_number');
+    const errorMsg = document.getElementById('errorMsg');
+    const resultSections = document.getElementById('result-sections');
+
+    if (plate.length < 5) {
+      errorMsg.innerText = "Please enter a valid vehicle number";
+      errorMsg.style.display = "block";
+      return;
+    }
+
+    errorMsg.style.display = "none";
+
+    try {
+      const cleanPlate = plate.toUpperCase().replace(/\s+/g, '');
+      const response = await fetch(`/track/${cleanPlate}?role=${role || ''}&session_plate=${sessionPlate || ''}`);
+      const data = await response.json();
+
+      if (data.found) {
+        resultSections.style.display = "block";
+        document.getElementById('resPlate').innerText = data.plate_number;
+        document.getElementById('resOwner').innerText = data.owner_name;
+        document.getElementById('resType').innerText = data.vehicle_type;
+        document.getElementById('resEmission').innerText = data.co2_emission.toFixed(2) + " kg";
+        document.getElementById('resFuel').innerText = (data.fuel_used || 0).toFixed(2) + " L";
+        document.getElementById('resValidity').innerText = data.validity;
+        document.getElementById('resLastDate').innerText = new Date(data.timestamp).toLocaleString();
+        
+        const pill = document.getElementById('resStatusPill');
+        pill.innerText = data.status;
+        pill.className = `status-badge ${data.status === 'PASS' ? 'status-pass' : 'status-fail'}`;
+
+        const reasonBox = document.getElementById('failReasonBox');
+        reasonBox.style.display = data.status === 'FAIL' ? 'block' : 'none';
+
+        // Populate History
+        const historyBody = document.getElementById('historyBody');
+        const isAdmin = role === 'admin';
+        document.getElementById('adminActionHeader').style.display = isAdmin ? 'table-cell' : 'none';
+
+        if (data.history && data.history.length > 0) {
+          historyBody.innerHTML = data.history.map(h => `
+            <tr>
+              <td>${new Date(h.timestamp).toLocaleDateString()}</td>
+              <td class="fw-bold">${h.emission.toFixed(2)}</td>
+              <td>
+                <span class="fw-bold ${h.status === 'PASS' ? 'text-success' : 'text-danger'}">
+                  ${h.status}
+                </span>
+              </td>
+              ${isAdmin ? `<td><button class="btn-delete" onclick="showDeleteConfirm(${h.tracking_id})" title="Delete Record">🗑️</button></td>` : ''}
+            </tr>
+          `).join('');
+        } else {
+          historyBody.innerHTML = `<tr><td colspan="${isAdmin ? 4 : 3}" class="text-center opacity-50">No history found</td></tr>`;
+        }
+      } else {
+        resultSections.style.display = "none";
+        errorMsg.innerText = data.message || "No records found for this vehicle";
+        errorMsg.style.display = "block";
+      }
+    } catch (err) {
+      console.error(err);
+      errorMsg.innerText = "Failed to connect to server";
+      errorMsg.style.display = "block";
+    }
+  }
+
+  function downloadMock() {
+    alert("Generating official emission report...");
+    setTimeout(() => alert("Report downloaded successfully!"), 1000);
+  }
+
+  function showDeleteConfirm(id) {
+    document.getElementById('deleteModal').classList.add('active');
+    document.getElementById('confirmDeleteBtn').onclick = () => confirmDelete(id);
+  }
+
+  function closeDeleteModal() {
+    document.getElementById('deleteModal').classList.remove('active');
+  }
+
+  async function confirmDelete(id) {
+    try {
+      const role = localStorage.getItem('role');
+      const response = await fetch(`/delete-record/${id}`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ role })
+      });
+      const data = await response.json();
+      if (data.success) {
+        closeDeleteModal();
+        track(); // Refresh history
+      } else {
+        alert(data.message || "Failed to delete record");
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Failed to delete record");
+    }
+  }
+
+  // Close modal on outside click
+  window.onclick = function(event) {
+    const modal = document.getElementById('deleteModal');
+    if (event.target == modal) {
+      closeDeleteModal();
+    }
+  }
+</script>
+
+</body>
+</html>

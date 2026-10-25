@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vehicle Emission Report - Carbon</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="theme.css">
+    <script src="theme.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: 'Outfit', sans-serif;
+            background: var(--bg-gradient);
+            color: var(--text-color);
+            min-height: 100vh;
+        }
+        .navbar {
+            background: var(--header-bg);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid var(--input-border);
+            padding: 1rem 2rem;
+        }
+        .container {
+            max-width: 1000px;
+            padding: 40px 20px;
+        }
+        .report-card {
+            background: var(--card-bg);
+            border-radius: 20px;
+            border: 1px solid var(--input-border);
+            box-shadow: var(--shadow);
+            padding: 30px;
+            margin-bottom: 30px;
+            transition: transform 0.3s ease;
+        }
+        .status-badge {
+            padding: 8px 20px;
+            border-radius: 50px;
+            font-weight: 700;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+        }
+        .status-pass { background: #dcfce7; color: #166534; }
+        .status-fail { background: #fee2e2; color: #991b1b; }
+        
+        [data-theme='dark'] .status-pass { background: #14532d; color: #4ade80; }
+        [data-theme='dark'] .status-fail { background: #7f1d1d; color: #f87171; }
+
+        .history-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0 10px;
+        }
+        .history-row {
+            background: rgba(0,0,0,0.03);
+            border-radius: 12px;
+            transition: all 0.2s ease;
+        }
+        [data-theme='dark'] .history-row { background: rgba(255,255,255,0.05); }
+        
+        .history-row td {
+            padding: 15px 20px;
+            border: none;
+        }
+        .history-row td:first-child { border-radius: 12px 0 0 12px; }
+        .history-row td:last-child { border-radius: 0 12px 12px 0; }
+
+        .chart-container {
+            height: 350px;
+            position: relative;
+        }
+        .empty-state {
+            text-align: center;
+            padding: 50px;
+            color: #888;
+        }
+        /* Top Controls Styling */
+        .top-controls {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 9999;
+        }
+        .theme-toggle {
+            background: rgba(0,0,0,0.05);
+            border: 1px solid var(--input-border);
+            color: var(--text-color);
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 1.1rem;
+        }
+        [data-theme='dark'] .theme-toggle {
+            background: rgba(255,255,255,0.1);
+            border-color: rgba(255,255,255,0.2);
+        }
+        .theme-toggle:hover {
+            transform: scale(1.1);
+            background: var(--input-bg);
+        }
+        .logout-btn {
+            padding: 8px 14px;
+            border-radius: 8px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            color: #ff4d4d;
+            border: 1px solid #ff4d4d;
+            background: transparent;
+        }
+        .logout-btn:hover {
+            background: #ff4d4d;
+            color: #fff;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(255, 77, 77, 0.3);
+        }
+
+        /* Dark Mode Readability Fixes */
+        [data-theme='dark'] h1, 
+        [data-theme='dark'] h3, 
+        [data-theme='dark'] h5, 
+        [data-theme='dark'] .fw-bold {
+            color: #ffffff !important;
+        }
+        [data-theme='dark'] .text-muted {
+            color: rgba(255, 255, 255, 0.7) !important;
+        }
+        [data-theme='dark'] label.text-muted {
+            color: rgba(255, 255, 255, 0.6) !important;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <h4 class="mb-0 fw-bold">CARBON<span style="color:#2ecc71;">.</span></h4>
+        <div class="top-controls">
+            <button id="themeToggleBtn" class="theme-toggle" onclick="toggleTheme()">🌙</button>
+            <button class="logout-btn" onclick="logout()">Logout</button>
+        </div>
+    </nav>
+
+    <div class="container">
+        <!-- Vehicle Info Header -->
+        <div class="d-flex justify-content-between align-items-end mb-4">
+            <div>
+                <p class="text-muted mb-1">Personal Vehicle Report</p>
+                <h1 class="fw-bold mb-0" id="plateDisplay">Loading...</h1>
+            </div>
+            <div id="statusBadgeContainer"></div>
+        </div>
+
+        <div class="row">
+            <!-- Latest Status Card -->
+            <div class="col-md-4">
+                <div class="report-card h-100">
+                    <h5 class="fw-bold mb-4">Latest PUC Status</h5>
+                    <div id="statusContent">
+                        <div class="spinner-border text-success" role="status"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Summary Stats -->
+            <div class="col-md-8">
+                <div class="report-card h-100">
+                    <h5 class="fw-bold mb-4">Emission Trend</h5>
+                    <div class="chart-container" id="chartWrapper">
+                        <canvas id="emissionChart"></canvas>
+                        <div id="chartPlaceholder" class="empty-state d-none">
+                            <p>No emission records available to graph</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- History List -->
+        <div class="mt-5">
+            <h5 class="fw-bold mb-4">Inspection History</h5>
+            <div class="report-card">
+                <div id="historyContent">
+                    <table class="history-table">
+                        <tbody id="historyList">
+                            <!-- Records will be injected here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const role = localStorage.getItem('role');
+            const plate = localStorage.getItem('plate_number');
+
+            if (role !== 'user' || !plate) {
+                window.location.href = 'index.html';
+                return;
+            }
+
+            document.getElementById('plateDisplay').innerText = `Vehicle: ${plate}`;
+            loadDashboardData(plate);
+        });
+
+        async function loadDashboardData(plate) {
+            const role = 'user';
+            const session_plate = plate;
+
+            try {
+                // Fetch Latest Status
+                const statusRes = await fetch(`/api/latest-status?role=${role}&session_plate=${session_plate}`);
+                const statusData = await statusRes.json();
+
+                if (statusData.found) {
+                    renderStatus(statusData);
+                } else {
+                    document.getElementById('statusContent').innerHTML = `<p class="text-muted">${statusData.message || 'No records available'}</p>`;
+                }
+
+                // Fetch History for List & Graph
+                const historyRes = await fetch(`/history?role=${role}&session_plate=${session_plate}`);
+                const historyData = await historyRes.json();
+
+                if (historyData.found && historyData.records.length > 0) {
+                    renderHistory(historyData.records);
+                    renderChart(historyData.records);
+                } else {
+                    renderEmptyState();
+                }
+
+            } catch (err) {
+                console.error("Failed to load dashboard data", err);
+            }
+        }
+
+        function renderStatus(data) {
+            const container = document.getElementById('statusBadgeContainer');
+            const content = document.getElementById('statusContent');
+            
+            const isPass = data.status === 'PASS';
+            const badgeClass = isPass ? 'status-pass' : 'status-fail';
+            
+            container.innerHTML = `<span class="status-badge ${badgeClass}">${data.status}</span>`;
+            
+            content.innerHTML = `
+                <div class="mb-3">
+                    <label class="text-muted small d-block">EMISSION STATUS</label>
+                    <h5 class="fw-bold mt-1">CO₂ Emission: ${data.co2_emission.toFixed(2)} kg</h5>
+                </div>
+                <div class="mb-3">
+                    <label class="text-muted small d-block">CERTIFICATE STATUS</label>
+                    <p class="fw-bold mb-0 ${isPass ? 'text-success' : 'text-danger'}">
+                        PUC Certificate: ${isPass ? 'Valid for 6 months' : 'Not Issued'}
+                    </p>
+                    ${!isPass ? '<p class="text-danger small fw-bold">Reason: High Emission</p>' : ''}
+                </div>
+                <div>
+                    <label class="text-muted small d-block">LAST INSPECTION</label>
+                    <p class="mb-0">${new Date(data.last_inspection).toLocaleDateString(undefined, { dateStyle: 'long' })}</p>
+                </div>
+            `;
+        }
+
+        function renderHistory(records) {
+            const list = document.getElementById('historyList');
+            list.innerHTML = records.map(r => `
+                <tr class="history-row">
+                    <td class="fw-bold">${new Date(r.timestamp).toLocaleDateString(undefined, { dateStyle: 'medium' })}</td>
+                    <td>${r.co2_emission.toFixed(2)} kg CO₂</td>
+                    <td class="text-end">
+                        <span class="status-badge ${r.status === 'PASS' ? 'status-pass' : 'status-fail'}">${r.status}</span>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function renderChart(records) {
+            const ctx = document.getElementById('emissionChart').getContext('2d');
+            const sorted = [...records].reverse();
+            
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: sorted.map(r => new Date(r.timestamp).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })),
+                    datasets: [{
+                        label: 'CO₂ Emission (kg)',
+                        data: sorted.map(r => r.co2_emission),
+                        borderColor: '#2ecc71',
+                        backgroundColor: 'rgba(46, 204, 113, 0.1)',
+                        borderWidth: 3,
+                        tension: 0.4,
+                        fill: true,
+                        pointBackgroundColor: '#2ecc71',
+                        pointRadius: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: { beginAtZero: true, grid: { color: 'rgba(0,0,0,0.05)' } },
+                        x: { grid: { display: false } }
+                    }
+                }
+            });
+        }
+
+        function renderEmptyState() {
+            document.getElementById('chartPlaceholder').classList.remove('d-none');
+            document.getElementById('emissionChart').classList.add('d-none');
+            document.getElementById('historyContent').innerHTML = `
+                <div class="empty-state">
+                    <p class="mb-0">No emission records available</p>
+                </div>
+            `;
+        }
+
+        function logout() {
+            localStorage.clear();
+            window.location.href = 'index.html';
+        }
+    </script>
+</body>
+</html>

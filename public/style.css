@@ -1,0 +1,62 @@
+:root {
+  --green: #2ecc71;
+  --dark: #333;
+  --gray: #565656;
+  --red: #e74c3c;
+  --white: #ffffff;
+}
+
+body {
+  font-family: "Open Sans", sans-serif;
+  margin: 0;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  background: var(--bg-gradient);
+  color: var(--text-color);
+  transition: all var(--transition);
+}
+
+.brand-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 20px;
+}
+
+.brand {
+  font-size: 34px;
+  font-weight: 900;
+  color: var(--text-color);
+  margin: 0;
+}
+
+.brand span {
+  color: var(--green);
+}
+
+.subtitle {
+  margin: 5px 0 0 0;
+  color: var(--text-color);
+  font-weight: 500;
+  opacity: 0.8;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+body {
+  animation: fadeIn 0.6s ease-in;
+}
